@@ -58,10 +58,14 @@ namespace :puma do
 
   def pumactl_command(command)
     queue! %[
-      if [ -e '#{puma_config}' ]; then
-        cd #{deploy_to}/#{current_path} && #{pumactl_cmd} -F #{puma_config} #{command}
+      if [ -e '#{pumactl_socket}' ]; then
+        if [ -e '#{puma_config}' ]; then
+          cd #{deploy_to}/#{current_path} && #{pumactl_cmd} -F #{puma_config} #{command}
+        else
+          cd #{deploy_to}/#{current_path} && #{pumactl_cmd} -S #{puma_state} -C 'unix://#{pumactl_socket}' --pidfile #{puma_pid} #{command}
+        fi
       else
-        cd #{deploy_to}/#{current_path} && #{pumactl_cmd} -S #{puma_state} -C 'unix://#{pumactl_socket}' --pidfile #{puma_pid} #{command}
+        echo 'Puma is not running!';
       fi
     ]
   end
